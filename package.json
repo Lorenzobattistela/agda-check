@@ -1,6 +1,14 @@
 {
   "name": "agda-check",
   "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lorenzobattistela/agda-check.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Lorenzobattistela/agda-check/issues"
+  },
+  "homepage": "https://github.com/Lorenzobattistela/agda-check#readme",
   "description": "A command-line tool to check Agda files and goals",
   "main": "agda-check.js",
   "bin": {
