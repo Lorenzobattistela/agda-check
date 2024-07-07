@@ -88,7 +88,7 @@ async function agdaCheck() {
 // - Avoiding redundant error messages
 // The function aims to provide a clear, concise, and visually appealing
 // representation of Agda's output to aid in debugging and development.
-function formatOutput(out) {
+function prettyPrintOutput(out) {
   // Parses JSON objects from the Agda output string
   function parseJsonObjects(str) {
     const jsonObjects = [];
@@ -289,16 +289,22 @@ function formatOutput(out) {
   // Generate pretty-printed output
   const fileContent = readFileContent(filePath);
   let prettyOut = '';
+  let hasError = false;
   for (let item of items) {
     if (item.type === 'hole') {
       prettyOut += formatHoleInfo(item, fileContent);
     } else if (item.type === 'error') {
+      hasError = true;
       prettyOut += formatErrorInfo(item, fileContent);
     }
     prettyOut += '\n';
   }
 
-  return prettyOut;
+  if (hasError) {
+    console.error(prettyOut.trim());
+  } else {
+    console.log(prettyOut.trim());
+  }
 }
 
 async function main() {
@@ -309,14 +315,10 @@ async function main() {
     process.exit(1);
   }
 
-  // Run Agda check and format the output
-  var output = await agdaCheck();
-  //console.log("OUTPUT:\n" + output);
-  //console.log("---------------------------");
-  console.log(formatOutput(output));
+  // Run Agda check and prints the output
+  prettyPrintOutput(await agdaCheck());
 }
 
 (async () => {
   await main();
 })();
-
