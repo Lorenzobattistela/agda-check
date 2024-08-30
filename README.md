@@ -1,56 +1,67 @@
+# Agda CLI
 
-# Agda Check
-
-This library aims to run typechecking and goal loading in `.agda` files.
+Agda CLI is a command-line tool that provides a set of utilities for working with Agda files. It offers functionalities such as checking Agda files, running Agda programs, compiling Agda to executables, and compiling Agda to JavaScript.
 
 ## Installation
 
-Install it globally:
-`npm i -g agda-check`
+To install Agda CLI globally, run:
+
+```
+npm install -g agda-cli
+```
 
 ## Usage
 
-To num the script, simply run:
+### agda-cli
 
-`agda-check file.agda`
-
-And the script will typecheck the file. If an error is encountered, you should see an output similar to what Agda Load does on Emacs / Vim integration.
-
-However, when no typechecking errors occur, and you have non resolve goals, agda-check will look for all the holes in the file and provide contexts for them. It does the equivalent of running AgdaContext (from Emacs or Vim) for all holes in the file. 
-
-Example:
-
-```agda
-data Nat : Set where
-  zero : Nat
-  succ : Nat -> Nat
-
-foo : Nat -> Nat
-foo zero     = {!   !}
-foo (succ p) = {! p !}
-```
-
-Should output:
+The main command-line interface for checking and running Agda files.
 
 ```
-All Goals
-- ?0 : Nat
-- ?1 : Nat
-
-Goal: Nat
-Have: _9
-
-Goal: Nat
-Have: Nat
-- p : Nat
-
-Checked!
+agda-cli [check|run] <file.agda>
 ```
 
-If you have lots of imports in your agda file, this checking process could take a while, since it recursively checks all the imports. However, if you run `agda-check` multiple times for a file with many imports, the imports checking step is cached, so it takes less time.
+- `check`: Checks the Agda file and displays any errors or holes.
+- `run`: Runs the Agda program and displays the output.
+
+### agda-compile
+
+Compiles an Agda file to an executable.
+
+```
+agda-compile <file.agda>
+```
+
+### agda-js
+
+Compiles an Agda file to JavaScript.
+
+```
+agda-js <file.agda>
+```
+
+## Features
+
+- Pretty-printed output for errors and holes
+- Syntax highlighting in the console
+- Easy-to-use commands for common Agda operations
+
+## Requirements
+
+- Node.js
+- Agda
+
+## License
+
+ISC
+
+## Author
+
+Lorenzo Battistela
 
 ## Contributing
 
-Feel free to suggest features, improvements or open a PR. 
+Contributions, issues, and feature requests are welcome. Feel free to check the [issues page](https://github.com/Lorenzobattistela/agda-cli/issues) if you want to contribute.
 
-This is a Work In Progress.
+## Support
+
+If you have any questions or need help, please open an issue in the [GitHub repository](https://github.com/Lorenzobattistela/agda-cli).
