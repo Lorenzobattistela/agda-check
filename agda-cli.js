@@ -11,7 +11,7 @@ const filePath = process.argv[3];
 // Execute an Agda command and return the output as a Promise
 function executeAgdaCommand(command) {
   return new Promise((resolve, reject) => {
-    const agda = spawn("agda", ["--interaction-json", "--no-libraries", "--allow-unsolved-metas"]);
+    const agda = spawn("agda", ["--interaction-json", "--no-termination-check", "--no-libraries", "--allow-unsolved-metas"]);
     let output = "";
     agda.stdout.on("data", (data) => output += data.toString());
     agda.stderr.on("data", (data) => console.error(`Agda Error: ${data}`));
