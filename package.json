@@ -1,6 +1,6 @@
 {
   "name": "agda-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A command-line tool to perform Agda commands like checking, running, and compiling",
   "main": "agda-cli.js",
   "bin": {
