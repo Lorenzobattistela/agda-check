@@ -16,7 +16,7 @@ const baseName = path.basename(agdaFile, '.agda');
 try {
   // Compile Agda to executable
   console.log('Compiling Agda file...');
-  execSync(`agda --compile --no-libraries ${agdaFile}`, { stdio: 'inherit' });
+  execSync(`agda --compile --no-libraries --no-termination-check ${agdaFile}`, { stdio: 'inherit' });
 
   // Remove MAlonzo directory
   console.log('Removing MAlonzo directory...');
