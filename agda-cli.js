@@ -220,7 +220,6 @@ function extractCodeFromError(errorMessage, fileContent, color) {
     const iniCol  = parseInt(match[2]);
     const endLine = match[3] ? parseInt(match[3]) : iniLine;
     const endCol  = parseInt(match[4]);
-    
     // Read the content of the file where the error occurred
     const errorFileContent = readFileContent(errorFilePath);
     return highlightCode(errorFileContent, iniLine, iniCol, endCol - 1, endLine, color, errorFilePath);
@@ -291,6 +290,7 @@ function prettyPrintOutput(out) {
   }
 
   // Generate pretty-printed output
+  const fileContent = readFileContent(filePath);
   let prettyOut = '';
   let hasError = false;
   for (let item of items) {
