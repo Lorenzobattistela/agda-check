@@ -1,1 +1,4 @@
 node_modules/
+.holefill
+agda_help.txt
+sonnet_log.txt

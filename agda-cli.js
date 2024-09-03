@@ -118,38 +118,16 @@ function extractHoleInfo(obj) {
   return null;
 }
 
-// Modify the extractErrorInfo function to include the file path
+// Extracts error information from a JSON object
 function extractErrorInfo(obj) {
   if (obj.kind === 'DisplayInfo' && obj.info && obj.info.error) {
     const errorInfo = obj.info.error;
     return {
       type   : 'error',
-      message: errorInfo.message,
-      filePath: errorInfo.message.split(':')[0] // Extract file path from error message
+      message: errorInfo.message
     };
   }
   return null;
-}
-
-// Format error information for pretty printing
-function formatErrorInfo(error, fileContent) {
-  const prettifiedError = prettifyError(error.message);
-  const errorFilePath = error.filePath || filePath; // Use the file path from the error, or fall back to the main file
-  const errorFileContent = readFileContent(errorFilePath);
-  
-  if (prettifiedError) {
-    return prettifiedError + '\n' + extractCodeFromError(error.message, errorFileContent, 'red');
-  } else {
-    const bold      = '\x1b[1m';
-    const dim       = '\x1b[2m';
-    const underline = '\x1b[4m';
-    const reset     = '\x1b[0m';
-    let result = `${bold}Error:${reset} ${error.message}\n`;
-    const fileInfo = error.message.split(':')[0];
-    result += `${dim}${underline}${fileInfo}${reset}\n`;
-    result += extractCodeFromError(error.message, errorFileContent, 'red');
-    return result;
-  }
 }
 
 // Formats hole information for pretty printing
@@ -168,13 +146,21 @@ function formatHoleInfo(hole, fileContent) {
   return result;
 }
 
-function readFileContent(filePath) {
-  try {
-    const absolutePath = path.isAbsolute(filePath) ? filePath : path.resolve(path.dirname(process.argv[3]), filePath);
-    return fs.readFileSync(absolutePath, 'utf-8');
-  } catch (error) {
-    console.error('Error reading file:', error);
-    return '';
+// Formats error information for pretty printing
+function formatErrorInfo(error, fileContent) {
+  const prettifiedError = prettifyError(error.message);
+  if (prettifiedError) {
+    return prettifiedError + '\n' + extractCodeFromError(error.message, fileContent, 'red');
+  } else {
+    const bold      = '\x1b[1m';
+    const dim       = '\x1b[2m';
+    const underline = '\x1b[4m';
+    const reset     = '\x1b[0m';
+    let result = `${bold}Error:${reset} ${error.message}\n`;
+    const fileInfo = error.message.split(':')[0];
+    result += `${dim}${underline}${fileInfo}${reset}\n`;
+    result += extractCodeFromError(error.message, fileContent, 'red');
+    return result;
   }
 }
 
@@ -225,22 +211,25 @@ function prettify_UnboundVariable(errorMessage) {
 // Extracts and highlights the affected code from the error message
 function extractCodeFromError(errorMessage, fileContent, color) {
   const lines = errorMessage.split('\n');
-  const match = lines[0].match(/(\d+),(\d+)-(?:(\d+),)?(\d+)/);
+  const fileInfo = lines[0].split(':');
+  const errorFilePath = fileInfo[0];
+  const match = fileInfo[1].match(/(\d+),(\d+)-(?:(\d+),)?(\d+)/);
   
   if (match) {
     const iniLine = parseInt(match[1]);
     const iniCol  = parseInt(match[2]);
     const endLine = match[3] ? parseInt(match[3]) : iniLine;
     const endCol  = parseInt(match[4]);
-    
-    return highlightCode(fileContent, iniLine, iniCol, endCol - 1, endLine, color);
+    // Read the content of the file where the error occurred
+    const errorFileContent = readFileContent(errorFilePath);
+    return highlightCode(errorFileContent, iniLine, iniCol, endCol - 1, endLine, color, errorFilePath);
   }
 
   return '';
 }
 
 // Highlights the specified code section
-function highlightCode(fileContent, startLine, startCol, endCol, endLine, color) {
+function highlightCode(fileContent, startLine, startCol, endCol, endLine, color, filePath) {
   try {
     const lines = fileContent.split('\n');
     const dim       = '\x1b[2m';
@@ -306,9 +295,12 @@ function prettyPrintOutput(out) {
   let hasError = false;
   for (let item of items) {
     if (item.type === 'hole') {
+      const fileContent = readFileContent(filePath);
       prettyOut += formatHoleInfo(item, fileContent);
     } else if (item.type === 'error') {
       hasError = true;
+      const errorFilePath = item.message.split(':')[0];
+      const fileContent = readFileContent(errorFilePath);
       prettyOut += formatErrorInfo(item, fileContent);
     }
     prettyOut += '\n';
@@ -332,79 +324,29 @@ function parseRunOutput(output) {
   return "No output";
 }
 
-// New function to check all .agda files in a directory
-async function checkAll(directory) {
-  const green = '\x1b[32m';
-  const red = '\x1b[31m';
-  const reset = '\x1b[0m';
-  
-  let allChecked = true;
-  let checkedFiles = 0;
-  let erroredFiles = 0;
-
-  async function checkFile(file) {
-    try {
-      await executeAgdaCommand(`IOTCM "${file}" None Direct (Cmd_load "${file}" [])\nx\n`);
-      console.log(`${green}✓ ${file}${reset}`);
-      checkedFiles++;
-    } catch (error) {
-      console.log(`${red}✗ ${file}${reset}`);
-      erroredFiles++;
-      allChecked = false;
-    }
-  }
-
-  async function traverseDirectory(dir) {
-    const files = fs.readdirSync(dir);
-    for (const file of files) {
-      const fullPath = path.join(dir, file);
-      if (fs.statSync(fullPath).isDirectory()) {
-        await traverseDirectory(fullPath);
-      } else if (path.extname(fullPath) === '.agda') {
-        await checkFile(fullPath);
-      }
-    }
-  }
-
-  await traverseDirectory(directory);
-
-  if (allChecked) {
-    console.log(`${green}All files checked!${reset}`);
-  } else {
-    console.log(`${green}${checkedFiles} file(s) checked.${reset}`);
-    console.log(`${red}${erroredFiles} file(s) with errors.${reset}`);
-  }
-}
-
 async function main() {
-  if (command === "checkAll") {
-    if (!filePath) {
-      console.error("Usage: agda-cli checkAll <directory>");
-      process.exit(1);
-    }
-    await checkAll(filePath);
-  } else if (!filePath || !filePath.endsWith(".agda")) {
+  if (!filePath || !filePath.endsWith(".agda")) {
     console.error("Usage: agda-cli [check|run] <file.agda>");
     process.exit(1);
-  } else {
-    switch (command) {
-      case "check": {
-        prettyPrintOutput(await agdaCheck());
-        const output = await agdaRun();
-        const result = parseRunOutput(output);
-        console.log(result);
-        break;
-      }
-      case "run": {
-        const output = await agdaRun();
-        const result = parseRunOutput(output);
-        console.log(result);
-        break;
-      }
-      default: {
-        console.error("Invalid command. Use 'check', 'run', or 'checkAll'.");
-        process.exit(1);
-      }
+  }
+
+  switch (command) {
+    case "check": {
+      prettyPrintOutput(await agdaCheck());
+      const output = await agdaRun();
+      const result = parseRunOutput(output);
+      console.log(result);
+      break;
+    }
+    case "run": {
+      const output = await agdaRun();
+      const result = parseRunOutput(output);
+      console.log(result);
+      break;
+    }
+    default: {
+      console.error("Invalid command. Use 'check' or 'run'.");
+      process.exit(1);
     }
   }
 }
